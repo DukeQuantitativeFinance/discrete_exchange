@@ -1,22 +1,24 @@
-import typing
+from typing import *
 
-class BaseTrader():
+from book import PublicBook
+from orders import BaseOrder
+
+
+class BaseTrader:
     def __init__(self, name):
-        pass
+        self.name = name
 
-    def update_history(self, orders):
+    def trade(self, round: int, book: dict[str, PublicBook], outstanding_markets: Dict[str, PublicBook], position: dict[str, int]) -> list[BaseOrder]:
         """
-        Provide the details of the trades in the previous rounds
-
-        :return:
+        Prompt the trader for their actions given the current state of the exchange
+        Formatting: dict[str, PublicBook] = {"product", (bids=((price, size)...), offers=((price, size)...))
+        :param round: The current round number
+        :param book: dictionary representing the open positions on each market.
+        :param outstanding_markets: dictionary representing your outstanding markets
+        :param position: dictionary representing your outstanding positions on each asset (cash & products)
+        :return: a list of orders. These can be buy, sell, or deletions
         """
-        pass
-
-    def submit_trades(self) -> typing.List<Market>:
-        pass
-
-    def set_api(self, api: ExchangeAPI):
-        pass
+        return []
 
     def __repr__(self):
         pass

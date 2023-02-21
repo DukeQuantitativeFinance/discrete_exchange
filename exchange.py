@@ -1,95 +1,71 @@
-from dataclasses import dataclass
-from typing import *
-from copy import deepcopy
 import random
-import heapq
+from copy import deepcopy
 
+from book import OrderBook
+from orders import *
 from trader import BaseTrader
-
-MAX_PRICE = 100
-MIN_PRICE = 0
-N_LEVELS = MAX_PRICE - MIN_PRICE + 1
-# limit max order size, max&min price
-# price time priority: first order = first paid, delete newest to oldest
-# deletion orders
-# limit orders
-
-
-@dataclass
-class Order:
-    price: int
-    round: int
-    owner: str
-    size: int
-    buy = True
-
-    def __lt__(self, other: Self):  # price time priority
-        return self.price < other.price or (self.price == other.price and self.round < other.round)
-
-    def __eq__(self, other):
-        return self.price == other.price and self.round == other.round
-
-    def __repr__(self):
-        if self.buy:
-            return f"{self.owner} buy {self.size}x${self.price} (round {self.round})"
-        else:
-            return f"{self.owner} sell {self.size}x${self.price} (round {self.round})"
-
-class BuyOrder(Order):
-    buy = True
-
-class SellOrder(Order):
-    buy = False
-
-
-
-
-class OrderBook:
-    def __init__(self, product):
-        self.product = product
-        self.bids = []  # buy prices
-        self.offers = []  # sell prices
-
-    def buy(self, order):
-        pass
-
-    def sell(self, order):
-        pass
-
-    def add_new_quote(self, quote):
-        pass
-
-    def create_copy(self):
-        pass
 
 
 class Exchange:
-    def __init__(self, products, *traders: BaseTrader, seed=None):
-        # TODO: set min and max price
-        self.seed = seed
+    MAX_ORDER_SIZE = 1000
+    MIN_PRICE = 0
+    MAX_PRICE = 100
+    def __init__(self, products, *traders: BaseTrader):
         self.traders = traders
         self.products = products
-        self.book = [OrderBook(product) for product in products]
-        self.positions = {trader.name:asset for asset in ("cash", *products) for trader in traders}
+        self.positions = {trader: {asset: 0 for asset in ["cash", *products]} for trader in traders}
+        self.books = {product: OrderBook(product, range(len(traders))) for product in products}
+        self.outstanding_orders = {trader.name: [] for trader in traders}
 
     def run_game(self, rounds):
+        """
+        Run the game for the specified rounds. A round consists of reading orders, validating, deleting, and processing
+        """
         for round in range(rounds):
+            round_orders: List[BaseOrder] = []
+            round_deletions: List[DeletionOrder] = []
+            books = [book.public() for book in self.books]
             for trader in self.traders:
-                # TODO: handle errors
-                # TODO: enforce int levels
-                # TODO: order limitis (1 order, 2 order, limitless, size prority)
-                markets = trader.submit_trades()
+                try:
+                    public = {product:book for product, book in zip(self.products, books)}
+                    outstanding = {product:self.books[product].get_oustanding(trader) for product in zip(self.products)}
+                    orders = trader.trade(round, public, outstanding, deepcopy(self.positions[trader]))
+                    orders, deletions = self.validate_orders(orders, trader, round)
+                    round_orders.extend(orders)
+                    round_deletions.extend(deletions)
+                except Exception as e:
+                    print(f"Trader {trader.name} encountered {e}")
+            for deletion in round_deletions:
+                self.books[deletion.product].deletion_order(deletion)
+            random.shuffle(round_orders)
+            for order in round_orders:
+                self.books[order.product].new_order(order)
 
-    def visualize(self):
-        pass # TODO
+    def validate_orders(self, orders: List[BaseOrder], trader: BaseTrader, round: int) -> tuple[list[BaseOrder], list[DeletionOrder]]:
+        """
+        Confirm that trader isn't doiing anything crazy and separate deletions
+        - set round and owner
+        - copy to prevent future manipulation
+        - force size and price to be ints
+        - prevent excessive sizing
+        :param orders: The raw trades sent by trader
+        :param trader: the trader object who
+        :param round: round these orders were created
+        :return: the buy/sell order, the deletion orders
+        """
+        out_orders = []
+        out_deletions = []
 
+        for order in orders:
+            order = deepcopy(order)
+            order.owner = trader
+            order.round = round
+            order.price = int(order.price)
+            order.size = min(int(order.size), self.MAX_ORDER_SIZE)
+            if isinstance(order, DeletionOrder):
+                out_deletions.append(order)  # have to copy to prevent later order manipulation
+            elif self.MIN_PRICE < order.price < self.MAX_PRICE:
+                out_orders.append(order)
+        return out_orders, out_deletions
 
-class BaseTrader():
-    def __init__(self, name):  # TODO: add externam id
-        self.name = name
-
-    def do_trade(self, round: int, book: Tuple[OrderBook], position: Position) -> List[Order]:  # TODO: add their outstanding positions
-        return []
-
-    def __repr__(self):
-        pass
+    # TODO: implement visuals and history
