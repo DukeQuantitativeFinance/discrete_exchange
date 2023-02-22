@@ -22,8 +22,8 @@ class Exchange:
         Run the game for the specified rounds. A round consists of reading orders, validating, deleting, and processing
         """
         for round in range(rounds):
-            round_orders: List[BaseOrder] = []
-            round_deletions: List[DeletionOrder] = []
+            round_orders: list[BaseOrder] = []
+            round_deletions: list[DeletionOrder] = []
             books = [book.public() for book in self.books]
             for trader in self.traders:
                 try:
@@ -41,7 +41,7 @@ class Exchange:
             for order in round_orders:
                 self.books[order.product].new_order(order)
 
-    def validate_orders(self, orders: List[BaseOrder], trader: BaseTrader, round: int) -> tuple[list[BaseOrder], list[DeletionOrder]]:
+    def validate_orders(self, orders: list[BaseOrder], trader: BaseTrader, round: int) -> tuple[list[BaseOrder], list[DeletionOrder]]:
         """
         Confirm that trader isn't doiing anything crazy and separate deletions
         - set round and owner

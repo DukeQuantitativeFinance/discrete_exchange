@@ -21,4 +21,4 @@ class BaseTrader:
         return []
 
     def __repr__(self):
-        pass
+        return self.name

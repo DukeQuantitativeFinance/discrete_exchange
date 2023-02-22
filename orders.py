@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-from typing import *
 from enum import Enum
 
 
@@ -7,24 +5,29 @@ class Side(Enum):
     buy = True
     sell = False
 
-@dataclass
 class BaseOrder:  # Initialize as a subclass (ie BuyOrder)
     """
     Base order class that is submitted to the Exchange. Contains relevant information.
-    Perfered creation is through the BuyOrder, SellOrder subclasses
+    Prefered creation is through the BuyOrder, SellOrder subclasses
     """
-    price: int
-    size: int
-    product: str
-    side: Side
-    round = 0  # set by exchange
-    owner = None  # set by exchange (type of BaseTrader
+    def __init__(self, price: int, size: int, product: str, side: Side):
+        self.price = price
+        self.size = size
+        self.product = product
+        self.side = side
+        self.round = 0
+        self.owner = None
 
-    def __lt__(self, other: Self):  # price time priority
-        return self.price < other.price == self.side or (self.price == other.price and self.round > other.round)
+    @classmethod
+    def from_tuple(cls, tuple, product):
+        price, size = tuple
+        return cls(price, size, product)
 
-    def __gt__(self, other: Self):
-        return self.price > other.price  == self.side or (self.price == other.price and self.round < other.round)
+    def __lt__(self, other):  # price time priority
+        return (self.price < other.price) == self.side.value or (self.price == other.price and self.round > other.round)
+
+    def __gt__(self, other):
+        return (self.price > other.price) == self.side.value or (self.price == other.price and self.round < other.round)
 
     def __eq__(self, other):
         return self.price == other.price and self.round == other.round
@@ -35,20 +38,23 @@ class BaseOrder:  # Initialize as a subclass (ie BuyOrder)
         else:
             return f"{self.owner} sell {self.size}x${self.price} (round {self.round})"
 
-    def get_deletion(self):
+    def get_deletion(self, amount=-1):
         """
         Generates an order to delete all markets at this level or above
+        :param amount the number of markets greater than this size to remove
         :return: A new deletion order
         """
-        return DeletionOrder(self.price, -1, self.product, self.side)  # delete all orders up to price
+        return DeletionOrder(self.price, amount, self.product, self.side)  # delete all orders up to price
 
 
 class BuyOrder(BaseOrder):
-    side = Side.buy
+    def __init__(self, price: int, size: int, product: str):
+        super().__init__(price, size, product, Side.buy)
 
 
 class SellOrder(BaseOrder):
-    side = Side.sell
+    def __init__(self, price: int, size: int, product: str):
+        super().__init__(price, size, product, Side.sell)
 
 
 class DeletionOrder(BaseOrder):
