@@ -1,6 +1,5 @@
 import random
 from copy import deepcopy
-
 from book import OrderBook
 from orders import *
 from trader import BaseTrader
@@ -14,7 +13,7 @@ class Exchange:
         self.traders = traders
         self.products = products
         self.positions = {trader: {asset: 0 for asset in ["cash", *products]} for trader in traders}
-        self.books = {product: OrderBook(product, range(len(traders))) for product in products}
+        self.books = {product: OrderBook(product, self.positions) for product in products}
         self.outstanding_orders = {trader.name: [] for trader in traders}
 
     def run_game(self, rounds):
@@ -24,11 +23,11 @@ class Exchange:
         for round in range(rounds):
             round_orders: list[BaseOrder] = []
             round_deletions: list[DeletionOrder] = []
-            books = [book.public() for book in self.books]
+            books = [self.books[book].public() for book in self.books]
             for trader in self.traders:
                 try:
                     public = {product:book for product, book in zip(self.products, books)}
-                    outstanding = {product:self.books[product].get_oustanding(trader) for product in zip(self.products)}
+                    outstanding = {product:self.books[product].get_outstanding(trader) for product in self.products}
                     orders = trader.trade(round, public, outstanding, deepcopy(self.positions[trader]))
                     orders, deletions = self.validate_orders(orders, trader, round)
                     round_orders.extend(orders)

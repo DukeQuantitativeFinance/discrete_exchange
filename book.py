@@ -57,6 +57,7 @@ class OrderBook:
                 sizing = min(order.size, offer.size)
                 offer.size -= sizing; order.size -= sizing
                 # adjust assets
+                # print(f"Round {order.round}: {order.owner} offers {sizing} for ${offer.price} to {offer.owner}")
                 self.positions[offer.owner]["cash"] += offer.price * sizing; self.positions[offer.owner][offer.product] -= sizing
                 self.positions[order.owner]["cash"] -= offer.price * sizing; self.positions[order.owner][offer.product] += sizing
                 # edit markets
@@ -72,6 +73,7 @@ class OrderBook:
                 bid.size -= sizing
                 order.size -= sizing
                 # adjust assets
+                # print(f"Round {order.round}: {order.owner} bids {sizing} for ${bid.price} to {bid.owner}")
                 self.positions[bid.owner]["cash"] -= bid.price * sizing
                 self.positions[bid.owner][bid.product] += sizing
                 self.positions[order.owner]["cash"] += bid.price * sizing
@@ -86,37 +88,29 @@ class OrderBook:
         """ A request to delete a max of [order.size] orders which exceed [order.price]. Exceed is lower sells and higher bids """
         assert isinstance(order, DeletionOrder)
         if order.size == -1: order.size = 1e9
-        if order.side == Side.buy:
-            to_remove = []
-            price = -1
-            bids_at_price = []
-            for bid in self.bids:
-                if bid.price < order.price:
-                    break
-                if bid.owner is order.owner:
-                    if bid.price == price:
-                        bids_at_price.append(bid)
-                    else:  # TODO: work on this price time priority deletion
-                        if price != -1:
-                            while bids_at_price:
-                                b = bids_at_price.pop()
-                                b.size, order.size = b.size-order.size, order.size-b.size
-                                if bid.size <= 0: to_remove.append(bid)
-                                if order.size <=0: break
-                            if order.size <= 0: break
-            for bid in to_remove:
-                self.bids.remove(bid)
-        else:
-            to_remove = []
-            for offer in self.offers:
-                if offer.price > order.price:
-                    break
-                if offer.owner is order.owner:
-                    offer.size, order.size = offer.size - order.size, order.size - offer.size
-                    if offer.size <= 0: to_remove.append(offer)
-                    if order.size <= 0: break
-            for bid in to_remove:
-                self.offers.remove(bid)
+        deleting_orders = list(filter(lambda o: o.owner is order.owner and (o.price >= order.price if order.side == Side.buy else o.price <= order.price), self.bids))
+        # setup priority structure
+        levels = []
+        level = []
+        price = -1
+        for bid in deleting_orders:
+            if bid.price != price and price != -1:
+                levels.append(level)
+                level = [bid]
+            else:
+                level.append(bid)
+            price = bid.price
+        levels.append(level)
+
+        # pop from structure
+        for level in levels:
+            while level:
+                b = level.pop()
+                b.size, order.size = b.size - order.size, order.size - b.size
+                if b.size <= 0: self.bids.remove(b)
+                if order.size <= 0: break
+            if order.size <= 0:
+                break
 
     def get_outstanding(self, trader) -> PublicBook:
         """ Get all the orders in this book from a given trader. *This should be copied before being passed back* """

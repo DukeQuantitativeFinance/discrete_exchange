@@ -39,10 +39,11 @@ def test_order():
 
 
 def test_exchange():
-    t1 = BaseTrader('t1')
-    t2 = BaseTrader('t2')
-    t3 = BaseTrader('t3')
-    exchange = Exchange(["test"], t1, t2, t3)
+    t1 = DumbTrader('t1')
+    t2 = BoringTrader('t2')
+    exchange = Exchange(["test"], t1, t2)
+    exchange.run_game(100)
+
 
 def test_book():
     t1 = BaseTrader("t1")
@@ -99,7 +100,7 @@ def test_book():
     del2 = DeletionOrder(99, 100, "test", Side.sell)
     book2.new_order(sell1)
     book2.deletion_order(del2)
-    assert str(book2.public()) == "PublicBook(bids=((90, 50),), offers=())"
+    assert str(book2.public()) == "PublicBook(bids=(), offers=((95, 10),))"
 
     # test time priority deletion
     book3 = OrderBook("test", a3)

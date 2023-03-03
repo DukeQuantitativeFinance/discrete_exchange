@@ -1,7 +1,7 @@
 from typing import *
 
 from book import PublicBook
-from orders import BaseOrder
+from orders import BaseOrder, BuyOrder, SellOrder
 
 
 class BaseTrader:
@@ -22,3 +22,12 @@ class BaseTrader:
 
     def __repr__(self):
         return self.name
+
+
+class DumbTrader(BaseTrader):
+    def trade(self, round: int, book: dict[str, PublicBook], outstanding_markets: Dict[str, PublicBook], position: dict[str, int]) -> list[BaseOrder]:
+        return [BuyOrder(round, 10, "test"), SellOrder(100-round, 10, "test")]
+
+class BoringTrader(BaseTrader):
+    def trade(self, round: int, book: dict[str, PublicBook], outstanding_markets: Dict[str, PublicBook], position: dict[str, int]) -> list[BaseOrder]:
+        return [BuyOrder(40, 10, "test"), SellOrder(60, 10, "test")]
