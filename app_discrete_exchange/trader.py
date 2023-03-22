@@ -1,7 +1,7 @@
 from typing import *
 
-from book import PublicBook
-from orders import BaseOrder, BuyOrder, SellOrder
+from .book import PublicBook
+from .orders import BaseOrder, BuyOrder, SellOrder
 
 
 class BaseTrader:

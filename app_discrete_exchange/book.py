@@ -1,4 +1,4 @@
-from orders import *
+from .orders import *
 from typing import NamedTuple
 
 

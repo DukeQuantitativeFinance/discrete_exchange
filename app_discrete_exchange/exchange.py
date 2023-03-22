@@ -1,8 +1,8 @@
 import random
 from copy import deepcopy
-from book import OrderBook
-from orders import *
-from trader import BaseTrader
+from .book import OrderBook
+from .orders import *
+from .trader import BaseTrader
 
 
 class Exchange:
