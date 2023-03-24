@@ -1,6 +1,6 @@
 from flask_login import UserMixin
 
-from .__init__ import database
+from .database import database
 
 # define user class
 # see: https://stackoverflow.com/questions/54992412/flask-login-usermixin-class-with-a-mongodb
