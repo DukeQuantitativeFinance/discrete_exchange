@@ -27,12 +27,18 @@ def signup():
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
+    
 
 # DISCRETE EXCHANGE ROUTES
-servers = {}
-user_to_game = {}
+servers = {} # map of game ids to server objects
+user_to_game = {} # map of user ids to game ids
 
 discrete_exchange_routes = Blueprint('discrete_exchange_routes', __name__)
+
+@discrete_exchange_routes.route('/discrete', methods = ['GET'])
+def home_screen():
+    if request.method == 'GET':
+        return '<h1>Welcome!</h1>'
 
 # route for user to host a lobby        
 @discrete_exchange_routes.route('/discrete/start', methods = ['POST'])
@@ -53,11 +59,13 @@ def join_game():
     global user_to_game
     
     if (request.method == 'POST'):
+        # get user and game ids from request
         user_id = request.form.get('userId')
         game_id = request.form.get('gameId')
-        game_server = servers[game_id]
-        game_server.add_user(user_id)
-        user_to_game[user_id] = game_id
+        
+        game_server = servers[game_id] # get server object
+        game_server.add_user(user_id) # add user to server
+        user_to_game[user_id] = game_id # map user id to game id
         
         
 # route for user to submit file
