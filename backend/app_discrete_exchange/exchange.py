@@ -68,3 +68,6 @@ class Exchange:
         return out_orders, out_deletions
 
     # TODO: implement visuals and history
+
+    def get_pnl(self, trader):
+        return self.positions[trader]['cash']        

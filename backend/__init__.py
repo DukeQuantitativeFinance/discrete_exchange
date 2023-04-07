@@ -3,6 +3,7 @@ import os
 from flask import Flask
 from pymongo import MongoClient
 from flask_login import LoginManager
+from flask_cors import CORS, cross_origin
 
 from .routes import main_routes, discrete_exchange_routes
 
@@ -17,6 +18,9 @@ login_manager.login_view = 'login'
 def create_app():
     
     app = Flask(__name__)
+    
+    # cors = CORS(app)
+    app.config['CORS_HEADERS'] = 'Content-Type'
     
     # configure upload destination for submitted files
     app.config['UPLOAD_DEST'] = os.path.dirname(__file__) + '/submitted_traders'
